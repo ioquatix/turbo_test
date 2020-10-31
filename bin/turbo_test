@@ -1,0 +1,13 @@
+#!/usr/bin/env ruby
+
+require_relative '../lib/turbo_test'
+
+server = TurboTest::Server.new
+
+queue = ARGV.map do |path|
+	[TurboTest::RSpec::Job, path]
+end
+
+server.host(queue)
+server.workers
+server.wait
