@@ -197,6 +197,7 @@ module TurboTest
 		
 		def wait
 			@container.wait
+			@bound_endpoint.close
 		end
 	end
 end
