@@ -5,8 +5,6 @@ require 'async/io/unix_endpoint'
 require 'async/io/shared_endpoint'
 require 'msgpack'
 
-Console.logger.warn!
-
 module TurboTest
 	class Wrapper < MessagePack::Factory
 		def initialize
@@ -28,7 +26,8 @@ module TurboTest
 	end
 	
 	class Server
-		def initialize(endpoint = nil)
+		def initialize(configuration, endpoint = nil)
+			@configuration = configuration
 			@endpoint = endpoint || Async::IO::Endpoint.unix('turbo_test.ipc')
 			@wrapper = Wrapper.new
 			
@@ -49,13 +48,13 @@ module TurboTest
 					instance.ready!
 					
 					@bound_endpoint.accept do |peer|
-						connected += 1
 						# Console.logger.info(self) {"Incoming connection from #{peer}..."}
 						
 						packer = @wrapper.packer(peer)
 						unpacker = @wrapper.unpacker(peer)
 						
 						packer.write([:connected, connected])
+						connected += 1
 						
 						unpacker.each do |message|
 							command, *arguments = message
@@ -65,7 +64,6 @@ module TurboTest
 								Console.logger.debug("Child Ready") {arguments}
 								
 								if job = queue.pop
-									progress.increment
 									packer.write([:job, job])
 									packer.flush
 								else
@@ -87,6 +85,7 @@ module TurboTest
 								Console.logger.debug("Job Count") {arguments}
 							when :result
 								Console.logger.debug("Job Result") {arguments}
+								progress.increment
 							when :error
 								Console.logger.error("Job Error") {arguments}
 							else
@@ -100,6 +99,8 @@ module TurboTest
 		
 		def print_summary(failures, command = $0)
 			return unless failures.any?
+			
+			failures.sort_by!{|(failure)| failure[:location]}
 			
 			$stderr.puts nil, "Failures:", nil
 			
@@ -134,9 +135,7 @@ module TurboTest
 							
 							case command
 							when :connected
-								index = *tail
-								
-								# Initialization here?
+								@configuration.worker&.call(*tail)
 							when :job
 								klass, *arguments = *tail
 								

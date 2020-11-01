@@ -17,10 +17,13 @@ Gem::Specification.new do |spec|
 	
 	spec.files = Dir.glob('{bin,lib}/**/*', File::FNM_DOTMATCH, base: __dir__)
 	
+	spec.executables = ["turbo_test"]
+	
 	spec.required_ruby_version = ">= 2.3.0"
 	
 	spec.add_dependency "async-container"
 	spec.add_dependency "async-io"
 	spec.add_dependency "msgpack"
 	spec.add_dependency "rspec"
+	spec.add_dependency "samovar"
 end

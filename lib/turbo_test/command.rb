@@ -1,6 +1,6 @@
-#!/usr/bin/env ruby
+# frozen_string_literal: true
 
-# Copyright, 2017, by Samuel G. D. Williams. <http://www.codeotaku.com>
+# Copyright, 2020, by Samuel G. D. Williams. <http://www.codeotaku.com>
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,13 +20,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require_relative '../lib/turbo_test/command'
+require_relative 'command/top'
 
-begin
-	TurboTest::Command.call
-rescue Interrupt
-	# Ignore.
-rescue => error
-	Async.logger.error(TurboTest::Command) {error}
-	exit! 1
+module TurboTest
+	module Command
+		# The main entry point for the `falcon` executable.
+		# @parameter arguments [Array(String)] The command line arguments.
+		def self.call(*arguments)
+			Top.call(*arguments)
+		end
+	end
 end
