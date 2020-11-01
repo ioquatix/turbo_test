@@ -1,3 +1,24 @@
+# frozen_string_literal: true
+
+# Copyright, 2020, by Samuel G. D. Williams. <http://www.codeotaku.com>
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
 
 require 'async'
 require 'async/container'
@@ -39,10 +60,17 @@ module TurboTest
 		end
 		
 		def host(queue)
+			input, output = IO.pipe
+			
 			@container.spawn(name: "#{self.class} Host") do |instance|
 				connected = 0
 				progress = Console.logger.progress("Queue", queue.size)
 				failures = []
+				
+				statistics = {
+					succeeded: 0,
+					failed: 0,
+				}
 				
 				Async do |task|
 					instance.ready!
@@ -81,8 +109,10 @@ module TurboTest
 							when :failed
 								Console.logger.debug("Job Failed") {arguments}
 								failures << arguments
+								statistics[:failed] += 1
 							when :count
 								Console.logger.debug("Job Count") {arguments}
+								statistics[:succeeded] += arguments.first
 							when :result
 								Console.logger.debug("Job Result") {arguments}
 								progress.increment
@@ -94,7 +124,15 @@ module TurboTest
 						end
 					end
 				end
+				
+			ensure
+				Console.logger.info("Writing results")
+				@wrapper.packer(output).write(statistics).flush
 			end
+			
+			output.close
+			
+			return @wrapper.unpacker(input)
 		end
 		
 		def print_summary(failures, command = $0)
@@ -135,7 +173,7 @@ module TurboTest
 							
 							case command
 							when :connected
-								@configuration.worker&.call(*tail)
+								@configuration&.worker&.call(*tail)
 							when :job
 								klass, *arguments = *tail
 								

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Copyright, 2020, by Samuel G. D. Williams. <http://www.codeotaku.com>
+# Copyright, 2018, by Samuel G. D. Williams. <http://www.codeotaku.com>
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,31 +20,22 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-module TurboTest
-	class Configuration
-		def initialize
-			@worker = nil
-		end
+require 'turbo_test/command/run'
+
+RSpec.describe TurboTest::Command::Run do
+	let(:pattern) do
+		File.expand_path("../../fixtures/rspec/successful/**/*_spec.rb", __dir__)
+	end
+	
+	let(:command) do
+		described_class[
+			Dir.glob(pattern)
+		]
+	end
+	
+	it "should report succeeded cases" do
+		statistics = command.call
 		
-		attr_accessor :worker
-		
-		def self.load(path)
-			configuration = self.new
-			
-			loader = Loader.new(configuration)
-			loader.instance_eval(File.read(path), path.to_s)
-			
-			return configuration
-		end
-		
-		class Loader
-			def initialize(configuration)
-				@configuration = configuration
-			end
-			
-			def worker(&block)
-				@configuration.worker = block
-			end
-		end
+		expect(statistics[:succeeded]).to be == 4
 	end
 end

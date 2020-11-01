@@ -43,8 +43,6 @@ module TurboTest
 			
 			many :paths, "The test paths to execute."
 			
-			split :child_options, "Extra options to pass to the child process."
-			
 			# Prepare the environment and run the controller.
 			def call
 				Async.logger.info(self) do |buffer|
@@ -53,7 +51,10 @@ module TurboTest
 				
 				path = @options[:configuration]
 				full_path = File.expand_path(path)
-				configuration = Configuration.load(full_path)
+				
+				if File.exist?(full_path)
+					configuration = Configuration.load(full_path)
+				end
 				
 				Bundler.require(:preload)
 				
@@ -67,9 +68,12 @@ module TurboTest
 					[RSpec::Job, path]
 				end
 				
-				server.host(queue)
+				results = server.host(queue)
+				
 				server.workers
 				server.wait
+				
+				return results.read
 			end
 		end
 	end

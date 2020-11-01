@@ -20,31 +20,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-module TurboTest
-	class Configuration
-		def initialize
-			@worker = nil
-		end
-		
-		attr_accessor :worker
-		
-		def self.load(path)
-			configuration = self.new
-			
-			loader = Loader.new(configuration)
-			loader.instance_eval(File.read(path), path.to_s)
-			
-			return configuration
-		end
-		
-		class Loader
-			def initialize(configuration)
-				@configuration = configuration
-			end
-			
-			def worker(&block)
-				@configuration.worker = block
-			end
-		end
+RSpec.describe TurboTest do
+	it "expects 1 to be 1" do
+		expect(1).to be == 1
 	end
 end
