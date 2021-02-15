@@ -68,12 +68,7 @@ module TurboTest
 					[RSpec::Job, path]
 				end
 				
-				results = server.host(queue)
-				
-				server.workers
-				server.wait
-				
-				return results.read
+				return server.run(queue)
 			end
 		end
 	end

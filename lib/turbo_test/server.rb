@@ -52,7 +52,7 @@ module TurboTest
 	class Server
 		def initialize(configuration, endpoint = nil)
 			@configuration = configuration
-			@endpoint = endpoint || Async::IO::Endpoint.unix('turbo_test.ipc')
+			@endpoint = endpoint || Async::IO::Endpoint.unix("turbo_test-#{Process.pid}.ipc")
 			@wrapper = Wrapper.new
 			
 			@container = Async::Container.new
@@ -162,15 +162,17 @@ module TurboTest
 		def workers
 			@container.run(name: "#{self.class} Worker") do |instance|
 				Async do |task|
+					sleep(rand)
 					@endpoint.connect do |peer|
 						threads = Async::IO::Threads.new
-						instance.ready!
 						
 						packer = @wrapper.packer(peer)
 						unpacker = @wrapper.unpacker(peer)
 						
 						packer.write([:ready])
 						packer.flush
+						
+						instance.ready!
 						
 						unpacker.each do |message|
 							command, tail = message
@@ -202,9 +204,18 @@ module TurboTest
 			end
 		end
 		
-		def wait
+		def run(queue)
+			self.workers
+			
+			# Wait until all children are ready:
+			@container.wait_until_ready
+			
+			results = self.host(queue)
+			
 			@container.wait
 			@bound_endpoint.close
+			
+			return results.read
 		end
 	end
 end
