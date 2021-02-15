@@ -188,9 +188,10 @@ module TurboTest
 									result = threads.async do
 										klass.new(*arguments).call(packer: packer)
 									end.wait
+									
 									packer.write([:result, result])
 								rescue Exception => exception
-									packer.write([:error, exception, exception.backtrace])
+									packer.write([:error, exception.class, exception.backtrace])
 								end
 								
 								packer.write([:ready])
