@@ -24,6 +24,9 @@ require 'async'
 require 'async/container'
 require 'async/io/unix_endpoint'
 require 'async/io/shared_endpoint'
+
+require 'async/io/threads'
+
 require 'msgpack'
 
 module TurboTest
@@ -160,6 +163,7 @@ module TurboTest
 			@container.run(name: "#{self.class} Worker") do |instance|
 				Async do |task|
 					@endpoint.connect do |peer|
+						threads = Async::IO::Threads.new
 						instance.ready!
 						
 						packer = @wrapper.packer(peer)
@@ -178,7 +182,10 @@ module TurboTest
 								klass, *arguments = *tail
 								
 								begin
-									result = klass.new(*arguments).call(packer: packer)
+									# We run this in a separate thread to keep it isolated from the worker loop:
+									result = threads.async do
+										klass.new(*arguments).call(packer: packer)
+									end.wait
 									packer.write([:result, result])
 								rescue Exception => exception
 									packer.write([:error, exception, exception.backtrace])
