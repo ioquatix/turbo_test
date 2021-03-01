@@ -56,10 +56,6 @@ module TurboTest
 			@wrapper = Wrapper.new
 			
 			@container = Async::Container.new
-			
-			@bound_endpoint = Sync do
-				Async::IO::SharedEndpoint.bound(@endpoint)
-			end
 		end
 		
 		def host(queue)
@@ -76,9 +72,13 @@ module TurboTest
 				}
 				
 				Async do |task|
+					bound_endpoint = Sync do
+						Async::IO::SharedEndpoint.bound(@endpoint)
+					end
+					
 					instance.ready!
 					
-					@bound_endpoint.accept do |peer|
+					bound_endpoint.accept do |peer|
 						# Console.logger.info(self) {"Incoming connection from #{peer}..."}
 						
 						packer = @wrapper.packer(peer)
@@ -126,8 +126,9 @@ module TurboTest
 							end
 						end
 					end
+					
+					bound_endpoint.close
 				end
-				
 			ensure
 				Console.logger.info("Writing results")
 				@wrapper.packer(output).write(statistics).flush
@@ -201,21 +202,26 @@ module TurboTest
 							end
 						end
 					end
+				rescue Errno::ECONNREFUSED
+					# Host is finished already.
 				end
 			end
 		end
 		
 		def run(queue)
-			self.workers
-			
-			# Wait until all children are ready:
-			@container.wait_until_ready
-			
+			# Start the host:
 			results = self.host(queue)
 			
-			@container.wait
-			@bound_endpoint.close
+			# Wait until the host is ready:
+			@container.wait_until_ready
 			
+			# Start the workers:
+			self.workers
+			
+			# Wait for the container to finish:
+			@container.wait
+			
+			# Read the results from the host:
 			return results.read
 		end
 	end
