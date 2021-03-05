@@ -21,6 +21,7 @@
 # THE SOFTWARE.
 
 require_relative 'run'
+require_relative 'list'
 require_relative '../version'
 
 require 'samovar'
@@ -43,6 +44,7 @@ module TurboTest
 			# @attribute [Command]
 			nested :command, {
 				'run' => Run,
+				'list' => List,
 			}, default: 'run'
 			
 			# Prepare the environment and invoke the sub-command.

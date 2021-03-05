@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Copyright, 2018, by Samuel G. D. Williams. <http://www.codeotaku.com>
+# Copyright, 2021, by Samuel G. D. Williams. <http://www.codeotaku.com>
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,27 +20,46 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require 'turbo_test/command/run'
+require 'samovar'
 
-RSpec.describe TurboTest::Command::Run do
-	let(:pattern) do
-		File.expand_path("../../fixtures/rspec/spec/unsuccessful/**/*_spec.rb", __dir__)
-	end
-	
-	let(:configuration_path) do
-		File.expand_path("../../fixtures/rspec/turbo_test.rb", __dir__)
-	end
-	
-	let(:command) do
-		described_class[
-			"--configuration", configuration_path,
-			*Dir.glob(pattern)
-		]
-	end
-	
-	it "should report failed cases" do
-		statistics = command.call
-		
-		expect(statistics[:failed]).to be == 1
+require_relative '../server'
+require_relative '../configuration'
+require_relative '../rspec/job'
+
+require 'bundler'
+
+module TurboTest
+	module Command
+		class List < Samovar::Command
+			self.description = "List tests available to be run."
+			
+			# The command line options.
+			# @attribute [Samovar::Options]
+			options do
+				option '-c/--configuration <path>', "The configuration path to use.", default: "turbo_test.rb"
+			end
+			
+			# Prepare the environment and run the controller.
+			def call
+				path = @options[:configuration]
+				full_path = File.expand_path(path)
+				
+				configuration = Configuration.new
+				
+				if File.exist?(full_path)
+					configuration.load(full_path)
+				end
+				
+				configuration.finalize!
+				
+				configuration.jobs.each do |klass, path, **options|
+					if options&.any?
+						puts "#{klass}: #{path} #{options.inspect}"
+					else
+						puts "#{klass}: #{path}"
+					end
+				end
+			end
+		end
 	end
 end

@@ -223,6 +223,10 @@ module TurboTest
 			
 			# Read the results from the host:
 			return results.read
+		ensure
+			if path = @endpoint.path and File.exist?(path)
+				File.unlink(path)
+			end
 		end
 	end
 end

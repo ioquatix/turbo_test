@@ -24,12 +24,17 @@ require 'turbo_test/command/run'
 
 RSpec.describe TurboTest::Command::Run do
 	let(:pattern) do
-		File.expand_path("../../fixtures/rspec/successful/**/*_spec.rb", __dir__)
+		File.expand_path("../../fixtures/rspec/spec/successful/**/*_spec.rb", __dir__)
 	end
 	
+	let(:configuration_path) do
+		File.expand_path("../../fixtures/rspec/turbo_test.rb", __dir__)
+	end
+
 	let(:command) do
 		described_class[
-			Dir.glob(pattern)
+			"--configuration", configuration_path,
+			*Dir.glob(pattern)
 		]
 	end
 	

@@ -38,7 +38,7 @@ module TurboTest
 			options do
 				option '-n/--count <count>', "Number of instances to start.", default: Async::Container.processor_count, type: Integer
 				
-				option '-c/--configuration', "The configuration path to use.", default: "turbo_test.rb"
+				option '-c/--configuration <path>', "The configuration path to use.", default: "turbo_test.rb"
 			end
 			
 			many :paths, "The test paths to execute."
@@ -52,9 +52,13 @@ module TurboTest
 				path = @options[:configuration]
 				full_path = File.expand_path(path)
 				
+				configuration = Configuration.new
+				
 				if File.exist?(full_path)
-					configuration = Configuration.load(full_path)
+					configuration.load(full_path)
 				end
+				
+				configuration.finalize!
 				
 				Bundler.require(:preload)
 				
@@ -64,11 +68,17 @@ module TurboTest
 				
 				server = Server.new(configuration)
 				
-				queue = paths.map do |path|
-					[RSpec::Job, path]
+				queue = configuration.queue(
+					paths&.map{|path| File.expand_path(path)}
+				)
+				
+				results = server.run(queue)
+				
+				if results[:failed].zero?
+					puts "All tests passed!"
 				end
 				
-				return server.run(queue)
+				return results
 			end
 		end
 	end

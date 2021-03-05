@@ -20,30 +20,79 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+require_relative 'rspec/job'
+
 module TurboTest
 	class Configuration
 		def initialize
+			@loaded = false
 			@worker = nil
+			@jobs = []
 		end
 		
 		attr_accessor :worker
+		attr_accessor :jobs
 		
-		def self.load(path)
-			configuration = self.new
+		def load(path)
+			loader = Loader.new(self, path)
 			
-			loader = Loader.new(configuration)
 			loader.instance_eval(File.read(path), path.to_s)
 			
-			return configuration
+			@loaded = true
+			
+			return loader
+		end
+		
+		def finalize!
+			unless @loaded
+				self.defaults!
+			end
+		end
+		
+		def queue(matching)
+			if matching.nil? or matching.empty?
+				# No filtering required, return all jobs:
+				return @jobs.dup
+			else
+				return @jobs.select{|klass, path| matching.include?(path)}
+			end
+		end
+		
+		DEFAULT_JOB_CLASSES = [RSpec::Job]
+		
+		def defaults!(pwd = Dir.pwd)
+			loader = Loader.new(self, pwd)
+			
+			loader.defaults!
+			
+			return loader
 		end
 		
 		class Loader
-			def initialize(configuration)
+			def initialize(configuration, path)
 				@configuration = configuration
+				@path = path
 			end
+			
+			attr :path
 			
 			def worker(&block)
 				@configuration.worker = block
+			end
+			
+			def add_jobs_matching(klass, pattern: klass::PATTERN, **options)
+				base = File.dirname(@path)
+				
+				Dir.glob(pattern, base: base) do |path|
+					path = File.expand_path(path, base)
+					@configuration.jobs << [klass, path, **options]
+				end
+			end
+			
+			def defaults!
+				DEFAULT_JOB_CLASSES.each do |klass|
+					add_jobs_matching(klass)
+				end
 			end
 		end
 	end
