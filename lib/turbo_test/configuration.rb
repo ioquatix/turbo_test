@@ -30,15 +30,14 @@ module TurboTest
 			@jobs = []
 		end
 		
+		attr_accessor :loaded
 		attr_accessor :worker
 		attr_accessor :jobs
 		
 		def load(path)
-			loader = Loader.new(self, path)
+			loader = Loader.new(self, File.dirname(path))
 			
 			loader.instance_eval(File.read(path), path.to_s)
-			
-			@loaded = true
 			
 			return loader
 		end
@@ -69,9 +68,9 @@ module TurboTest
 		end
 		
 		class Loader
-			def initialize(configuration, path)
+			def initialize(configuration, base)
 				@configuration = configuration
-				@path = path
+				@base = base
 			end
 			
 			attr :path
@@ -81,10 +80,11 @@ module TurboTest
 			end
 			
 			def add_jobs_matching(klass, pattern: klass::PATTERN, **options)
-				base = File.dirname(@path)
+				# This indicates that someone has added jobs:
+				@configuration.loaded = true
 				
-				Dir.glob(pattern, base: base) do |path|
-					path = File.expand_path(path, base)
+				Dir.glob(pattern, base: @base) do |path|
+					path = File.expand_path(path, @base)
 					@configuration.jobs << [klass, path, **options]
 				end
 			end
