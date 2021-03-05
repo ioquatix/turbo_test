@@ -47,7 +47,7 @@ module TurboTest
 		class Job
 			PATTERN = "spec/**/*_spec.rb"
 			
-			def initialize(path)
+			def initialize(path, **options)
 				@path = path
 			end
 			
