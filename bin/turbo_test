@@ -27,6 +27,6 @@ begin
 rescue Interrupt
 	# Ignore.
 rescue => error
-	Async.logger.error(TurboTest::Command) {error}
+	Console.logger.error(TurboTest::Command) {error}
 	exit! 1
 end

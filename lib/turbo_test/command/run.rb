@@ -45,7 +45,7 @@ module TurboTest
 			
 			# Prepare the environment and run the controller.
 			def call
-				Async.logger.info(self) do |buffer|
+				Console.logger.info(self) do |buffer|
 					buffer.puts "TurboTest v#{VERSION} preparing for maximum thrust!"
 				end
 				
