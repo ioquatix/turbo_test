@@ -4,5 +4,5 @@
 # Copyright, 2020-2022, by Samuel Williams.
 
 module TurboTest
-	VERSION = "0.1.2"
+	VERSION = "0.2.0"
 end
