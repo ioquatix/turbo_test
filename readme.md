@@ -1,6 +1,6 @@
 # TurboTest
 
-[![Development Status](https://github.com/ioquatix/turbo_test/workflows/Development/badge.svg)](https://github.com/ioquatix/turbo_test/actions?workflow=Development)
+[![Development Status](https://github.com/ioquatix/turbo_test/workflows/Test/badge.svg)](https://github.com/ioquatix/turbo_test/actions?workflow=Test)
 
 ## Proposal
 
@@ -37,7 +37,3 @@ Guard at the moment does not support interruptible tests, this is a must have fe
 ### Why not parallel\_test?
 
 It does not support a pull model so it would be close to a ground up re-write.
-
-## License
-
-The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
