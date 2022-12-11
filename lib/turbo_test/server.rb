@@ -43,6 +43,8 @@ module TurboTest
 		
 		def host(queue)
 			input, output = IO.pipe
+			input.binmode
+			output.binmode
 			
 			@container.spawn(name: "#{self.class} Host") do |instance|
 				connected = 0
